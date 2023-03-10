@@ -12,9 +12,6 @@ config BR2_PACKAGE_IMX_GPU_VIV
 	depends on (BR2_arm && BR2_ARM_EABIHF) || BR2_aarch64
 	# Library binaries are linked against libc.so.6
 	depends on BR2_TOOLCHAIN_USES_GLIBC
-	# Library binaries are linked against libdrm.so.2, except framebuffer
-	# output on ARM
-	select BR2_PACKAGE_LIBDRM if !(BR2_arm && BR2_PACKAGE_IMX_GPU_VIV_OUTPUT_FB)
 	select BR2_PACKAGE_HAS_LIBEGL
 	select BR2_PACKAGE_HAS_LIBGLES
 	# gbm is only available in the aarch64 blobs
@@ -45,12 +42,9 @@ choice
 
 config BR2_PACKAGE_IMX_GPU_VIV_OUTPUT_FB
 	bool "Framebuffer"
-	# The i.MX8 blob doesn't support FB output
-	depends on !BR2_PACKAGE_FREESCALE_IMX_PLATFORM_IMX8M
 
 config BR2_PACKAGE_IMX_GPU_VIV_OUTPUT_WL
 	bool "Wayland"
-	select BR2_PACKAGE_WAYLAND
 	select BR2_PACKAGE_HAS_LIBEGL_WAYLAND
 
 endchoice
@@ -84,6 +78,16 @@ config BR2_PACKAGE_IMX_GPU_VIV_PLATFORM
 	default "mx8mq" if BR2_PACKAGE_FREESCALE_IMX_PLATFORM_IMX8M
 	default "mx8qm" if BR2_PACKAGE_FREESCALE_IMX_PLATFORM_IMX8
 	default "mx8qxp" if BR2_PACKAGE_FREESCALE_IMX_PLATFORM_IMX8X
+
+# Library binaries are linked against libdrm and wayland,
+# except framebuffer output on ARM.
+# Framebuffer output on aarch64 uses the same libraries
+# as wayland output.
+config BR2_PACKAGE_IMX_GPU_VIV_USES_WAYLAND
+	bool
+	default y if !(BR2_arm && BR2_PACKAGE_IMX_GPU_VIV_OUTPUT_FB)
+	select BR2_PACKAGE_LIBDRM
+	select BR2_PACKAGE_WAYLAND
 
 endif
 
