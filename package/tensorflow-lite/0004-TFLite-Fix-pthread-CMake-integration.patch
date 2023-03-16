@@ -1,0 +1,57 @@
+From 8023633ce4caf48859c863e005edc1526089a191 Mon Sep 17 00:00:00 2001
+From: Daniel Lang <ldaniell14260@gmail.com>
+Date: Thu, 27 Jul 2023 11:33:59 +0000
+Subject: [PATCH] [FTLite] Fix pthreadpool CMake integration
+
+With the changes introduced in 9c3e858 it is no longer possible to use a
+prebuilt version of pthreadpool. The only options are download it or
+specify a folder where it was downloaded.
+
+Add SYSTEM_PTHREADPOOL as a new option that triggers find_library() and
+fails if the library can't be found.
+
+https://github.com/tensorflow/tensorflow/commit/1c6adc0bbefb69fa08004b59d267a5b8bef7c244
+Signed-off-by: Daniel Lang <dalang@gmx.at>
+---
+ tensorflow/lite/CMakeLists.txt             | 8 +++++---
+ tensorflow/lite/g3doc/guide/build_cmake.md | 1 +
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/tensorflow/lite/CMakeLists.txt b/tensorflow/lite/CMakeLists.txt
+index bc97bac8a1b10..89ec80ab39080 100644
+--- a/tensorflow/lite/CMakeLists.txt
++++ b/tensorflow/lite/CMakeLists.txt
+@@ -158,8 +158,10 @@ find_package(ml_dtypes REQUIRED)
+ find_package(ruy REQUIRED)
+ # Download necessary dependencies.
+ # Download pthreadpool source package if it doesn't exist.
+-if(NOT DEFINED PTHREADPOOL_SOURCE_DIR)
+-    message(STATUS "Downloading pthreadpool to ${CMAKE_BINARY_DIR}/pthreadpool-source (define PTHREADPOOL_SOURCE_DIR to avoid it)")
++if(SYSTEM_PTHREADPOOL)
++  find_library(PTHREADPOOL_LIB pthreadpool REQUIRED)
++elseif(NOT DEFINED PTHREADPOOL_SOURCE_DIR)
++    message(STATUS "Downloading pthreadpool to ${CMAKE_BINARY_DIR}/pthreadpool-source (define SYSTEM_PTHREADPOOL or PTHREADPOOL_SOURCE_DIR to avoid it)")
+     configure_file(cmake/DownloadPThreadPool.cmake "${CMAKE_BINARY_DIR}/pthreadpool-download/CMakeLists.txt")
+     execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+       WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/pthreadpool-download")
+@@ -168,7 +170,7 @@ if(NOT DEFINED PTHREADPOOL_SOURCE_DIR)
+     set(PTHREADPOOL_SOURCE_DIR "${CMAKE_BINARY_DIR}/pthreadpool-source" CACHE STRING "pthreadpool source directory")
+ endif()
+ # Configure pthreadpool
+-if(NOT TARGET pthreadpool)
++if(NOT SYSTEM_PTHREADPOOL AND NOT TARGET pthreadpool)
+   set(PTHREADPOOL_BUILD_TESTS OFF CACHE BOOL "")
+   set(PTHREADPOOL_BUILD_BENCHMARKS OFF CACHE BOOL "")
+   set(PTHREADPOOL_ALLOW_DEPRECATED_API OFF CACHE BOOL "")
+diff --git a/tensorflow/lite/g3doc/guide/build_cmake.md b/tensorflow/lite/g3doc/guide/build_cmake.md
+index 556c763ac0bb5..adcb1320e8237 100644
+--- a/tensorflow/lite/g3doc/guide/build_cmake.md
++++ b/tensorflow/lite/g3doc/guide/build_cmake.md
+@@ -82,6 +82,7 @@ variables to point to your library installations.
+ cmake ../tensorflow_src/tensorflow/lite -DTFLITE_ENABLE_INSTALL=ON \
+   -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON \
+   -DSYSTEM_FARMHASH=ON \
++  -DSYSTEM_PTHREADPOOL=ON \
+   -Dabsl_DIR=<install path>/lib/cmake/absl \
+   -DEigen3_DIR=<install path>/share/eigen3/cmake \
+   -DFlatBuffers_DIR=<install path>/lib/cmake/flatbuffers \

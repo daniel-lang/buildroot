@@ -1,0 +1,28 @@
+From f9d4231ed84112571498175b990caa4987e1c64d Mon Sep 17 00:00:00 2001
+From: Daniel Lang <ldaniell14260@gmail.com>
+Date: Wed, 26 Jul 2023 13:16:09 +0000
+Subject: [PATCH] [TFLite] Fix FlatBuffers package name in installed CMake
+ files
+
+Similiar to #58677, the capitalization of FlatBuffers needs to match.
+Otherwise using TFLite via find_package() will fail to find FlatBuffers.
+
+Upstream: https://github.com/tensorflow/tensorflow/commit/81cb103bc0b2ad8165918404d55a1d49187705bc
+Signed-off-by: Daniel Lang <dalang@gmx.at>
+---
+ tensorflow/lite/tools/cmake/tensorflow-liteConfig.cmake.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tensorflow/lite/tools/cmake/tensorflow-liteConfig.cmake.in b/tensorflow/lite/tools/cmake/tensorflow-liteConfig.cmake.in
+index 04e49106a89a5..8845ba7a8963b 100644
+--- a/tensorflow/lite/tools/cmake/tensorflow-liteConfig.cmake.in
++++ b/tensorflow/lite/tools/cmake/tensorflow-liteConfig.cmake.in
+@@ -17,7 +17,7 @@ include(CMakeFindDependencyMacro)
+ 
+ find_dependency(absl)
+ find_dependency(Eigen3)
+-find_dependency(Flatbuffers)
++find_dependency(FlatBuffers)
+ find_dependency(NEON_2_SSE)
+ find_dependency(cpuinfo)
+ find_dependency(ruy)

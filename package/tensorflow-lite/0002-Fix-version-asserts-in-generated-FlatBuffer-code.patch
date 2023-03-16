@@ -1,0 +1,198 @@
+From 491681a5620e41bf079a582ac39c585cc86878b9 Mon Sep 17 00:00:00 2001
+From: "A. Unique TensorFlower" <gardener@tensorflow.org>
+Date: Tue, 13 Jun 2023 12:48:10 -0700
+Subject: [PATCH] Fix version asserts in generated FlatBuffer code
+
+PiperOrigin-RevId: 540044033
+
+Upstream: https://github.com/tensorflow/tensorflow/commit/491681a5620e41bf079a582ac39c585cc86878b9
+Signed-off-by: Daniel Lang <dalang@gmx.at>
+---
+ .../acceleration/configuration/configuration_generated.h    | 2 +-
+ .../delegates/gpu/cl/compiled_program_cache_generated.h     | 2 +-
+ tensorflow/lite/delegates/gpu/cl/serialization_generated.h  | 2 +-
+ tensorflow/lite/delegates/gpu/common/gpu_model_generated.h  | 2 +-
+ .../gpu/common/task/serialization_base_generated.h          | 2 +-
+ .../acceleration/configuration/configuration_generated.h    | 2 +-
+ tensorflow/lite/schema/conversion_metadata_generated.h      | 2 +-
+ tensorflow/lite/schema/schema_generated.h                   | 2 +-
+ tensorflow/lite/tools/cmake/modules/flatbuffers.cmake       | 2 +-
+ tensorflow/tools/ci_build/release/requirements_common.txt   | 2 +-
+ tensorflow/tools/pip_package/setup.py                       | 2 +-
+ .../tools/tf_sig_build_dockerfiles/devel.requirements.txt   | 2 +-
+ third_party/flatbuffers/workspace.bzl                       | 6 +++---
+ 13 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/tensorflow/lite/acceleration/configuration/configuration_generated.h b/tensorflow/lite/acceleration/configuration/configuration_generated.h
+index d95e98a07108a..3ea13a714ee88 100644
+--- a/tensorflow/lite/acceleration/configuration/configuration_generated.h
++++ b/tensorflow/lite/acceleration/configuration/configuration_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/delegates/gpu/cl/compiled_program_cache_generated.h b/tensorflow/lite/delegates/gpu/cl/compiled_program_cache_generated.h
+index 02315c30a7aec..18cd2993d4c3a 100755
+--- a/tensorflow/lite/delegates/gpu/cl/compiled_program_cache_generated.h
++++ b/tensorflow/lite/delegates/gpu/cl/compiled_program_cache_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/delegates/gpu/cl/serialization_generated.h b/tensorflow/lite/delegates/gpu/cl/serialization_generated.h
+index d0108d97b2903..3f9912890fc1c 100755
+--- a/tensorflow/lite/delegates/gpu/cl/serialization_generated.h
++++ b/tensorflow/lite/delegates/gpu/cl/serialization_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ #include "gpu_model_generated.h"
+diff --git a/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h b/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h
+index 8bb2ae32e0da3..d7bed1160faa2 100755
+--- a/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h
++++ b/tensorflow/lite/delegates/gpu/common/gpu_model_generated.h
+@@ -23,7 +23,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ #include "serialization_base_generated.h"
+diff --git a/tensorflow/lite/delegates/gpu/common/task/serialization_base_generated.h b/tensorflow/lite/delegates/gpu/common/task/serialization_base_generated.h
+index 015bb5955d55d..a700ba1716f8c 100755
+--- a/tensorflow/lite/delegates/gpu/common/task/serialization_base_generated.h
++++ b/tensorflow/lite/delegates/gpu/common/task/serialization_base_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h b/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h
+index 4f2bda672df21..e49884e8e8f04 100644
+--- a/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h
++++ b/tensorflow/lite/experimental/acceleration/configuration/configuration_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/schema/conversion_metadata_generated.h b/tensorflow/lite/schema/conversion_metadata_generated.h
+index 69b2316a2d62f..2a059f65032a8 100755
+--- a/tensorflow/lite/schema/conversion_metadata_generated.h
++++ b/tensorflow/lite/schema/conversion_metadata_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/schema/schema_generated.h b/tensorflow/lite/schema/schema_generated.h
+index 85a9badc7e7a1..10f0f8f2fdeb7 100755
+--- a/tensorflow/lite/schema/schema_generated.h
++++ b/tensorflow/lite/schema/schema_generated.h
+@@ -24,7 +24,7 @@ limitations under the License.
+ // generated, otherwise it may not be compatible.
+ static_assert(FLATBUFFERS_VERSION_MAJOR == 23 &&
+               FLATBUFFERS_VERSION_MINOR == 5 &&
+-              FLATBUFFERS_VERSION_REVISION == 8,
++              FLATBUFFERS_VERSION_REVISION == 26,
+              "Non-compatible flatbuffers version included");
+ 
+ namespace tflite {
+diff --git a/tensorflow/lite/tools/cmake/modules/flatbuffers.cmake b/tensorflow/lite/tools/cmake/modules/flatbuffers.cmake
+index 907dc40b435ea..45d5b7f224948 100644
+--- a/tensorflow/lite/tools/cmake/modules/flatbuffers.cmake
++++ b/tensorflow/lite/tools/cmake/modules/flatbuffers.cmake
+@@ -23,7 +23,7 @@ OverridableFetchContent_Declare(
+   flatbuffers
+   GIT_REPOSITORY https://github.com/google/flatbuffers
+   # Sync with tensorflow/third_party/flatbuffers/workspace.bzl
+-  GIT_TAG v23.5.8
++  GIT_TAG v23.5.26
+   GIT_SHALLOW TRUE
+   GIT_PROGRESS TRUE
+   SOURCE_DIR "${CMAKE_BINARY_DIR}/flatbuffers"
+diff --git a/tensorflow/tools/ci_build/release/requirements_common.txt b/tensorflow/tools/ci_build/release/requirements_common.txt
+index 8a38396fcacff..4fb2aaba6cbd6 100644
+--- a/tensorflow/tools/ci_build/release/requirements_common.txt
++++ b/tensorflow/tools/ci_build/release/requirements_common.txt
+@@ -3,7 +3,7 @@
+ # This will change in the future.
+ absl-py ~= 1.0.0
+ astunparse ~= 1.6.3
+-flatbuffers ~= 23.5.8
++flatbuffers ~= 23.5.26
+ google_pasta ~= 0.2
+ h5py ~= 3.8.0  # Earliest version for Python 3.11
+ # TODO(b/262592253): Support older versions of NumPy for Python 3.10 and lower
+diff --git a/tensorflow/tools/pip_package/setup.py b/tensorflow/tools/pip_package/setup.py
+index 9e6922802023e..98a18b5a8c2e7 100644
+--- a/tensorflow/tools/pip_package/setup.py
++++ b/tensorflow/tools/pip_package/setup.py
+@@ -84,7 +84,7 @@ def standard_or_nightly(standard, nightly):
+ REQUIRED_PACKAGES = [
+     'absl-py >= 1.0.0',
+     'astunparse >= 1.6.0',
+-    'flatbuffers >= 23.5.8',
++    'flatbuffers >= 23.5.26',
+     # TODO(b/213222745) gast versions above 0.4.0 break TF's tests
+     'gast >= 0.2.1, <= 0.4.0',
+     'google_pasta >= 0.1.1',
+diff --git a/tensorflow/tools/tf_sig_build_dockerfiles/devel.requirements.txt b/tensorflow/tools/tf_sig_build_dockerfiles/devel.requirements.txt
+index 459371d03397e..a85a70b43b052 100644
+--- a/tensorflow/tools/tf_sig_build_dockerfiles/devel.requirements.txt
++++ b/tensorflow/tools/tf_sig_build_dockerfiles/devel.requirements.txt
+@@ -6,7 +6,7 @@
+ # This will change in the future.
+ absl-py ~= 1.0.0
+ astunparse ~= 1.6.3
+-flatbuffers ~= 23.5.8
++flatbuffers ~= 23.5.26
+ google_pasta ~= 0.2
+ h5py ~= 3.8.0 # Earliest version for Python 3.11
+ # TODO(b/262592253): Support older versions of NumPy for Python 3.10 and lower
+diff --git a/third_party/flatbuffers/workspace.bzl b/third_party/flatbuffers/workspace.bzl
+index 1c05d53529855..1aa9b2ff2d00b 100644
+--- a/third_party/flatbuffers/workspace.bzl
++++ b/third_party/flatbuffers/workspace.bzl
+@@ -5,9 +5,9 @@ load("//third_party:repo.bzl", "tf_http_archive", "tf_mirror_urls")
+ def repo():
+     tf_http_archive(
+         name = "flatbuffers",
+-        strip_prefix = "flatbuffers-23.5.8",
+-        sha256 = "55b75dfa5b6f6173e4abf9c35284a10482ba65db886b39db511eba6c244f1e88",
+-        urls = tf_mirror_urls("https://github.com/google/flatbuffers/archive/v23.5.8.tar.gz"),
++        strip_prefix = "flatbuffers-23.5.26",
++        sha256 = "1cce06b17cddd896b6d73cc047e36a254fb8df4d7ea18a46acf16c4c0cd3f3f3",
++        urls = tf_mirror_urls("https://github.com/google/flatbuffers/archive/v23.5.26.tar.gz"),
+         build_file = "//third_party/flatbuffers:flatbuffers.BUILD",
+         system_build_file = "//third_party/flatbuffers:BUILD.system",
+         link_files = {

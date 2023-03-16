@@ -1,0 +1,238 @@
+From 599baefe9e2ac8d16202553f01f252dc48cbda72 Mon Sep 17 00:00:00 2001
+From: Daniel Lang <ldaniell14260@gmail.com>
+Date: Thu, 27 Jul 2023 09:44:39 +0000
+Subject: [PATCH] [TFLite] Fix gemmlowp CMake integration
+
+GIT_TAG in gemmlowp.cmake wasn't is sync with
+tensorflow/third_party/gemmlowp/workspace.bzl, an older version was used.
+
+The new version of gemmlowp has a CMake file in contrib, so use that
+instead.
+
+gemmlowp's CMake file defines gemmlowp::gemmlowp for the header only
+library.
+
+BUILD_TESTING has to be disabled temporarily, otherwise a target clash
+between glemmlowp and google_benchmark happens.
+
+All of this makes it possible to switch between gemmlowp being supplied
+by the system or by tensorflow.
+
+Upstream: https://github.com/tensorflow/tensorflow/commit/b276e31ff3140e1fd20900d8df01b91900a7886d
+[Daniel: backport to 2.13.0]
+Signed-off-by: Daniel Lang <dalang@gmx.at>
+---
+ tensorflow/lite/CMakeLists.txt                |   2 +-
+ tensorflow/lite/g3doc/guide/build_cmake.md    |   1 +
+ .../tools/cmake/modules/Findgemmlowp.cmake    |   8 +-
+ .../lite/tools/cmake/modules/gemmlowp.cmake   |  12 +-
+ .../cmake/modules/gemmlowp/CMakeLists.txt     | 119 ------------------
+ 5 files changed, 14 insertions(+), 128 deletions(-)
+ delete mode 100644 tensorflow/lite/tools/cmake/modules/gemmlowp/CMakeLists.txt
+
+diff --git a/tensorflow/lite/CMakeLists.txt b/tensorflow/lite/CMakeLists.txt
+index bc97bac8a1b10..b0366ac517b3f 100644
+--- a/tensorflow/lite/CMakeLists.txt
++++ b/tensorflow/lite/CMakeLists.txt
+@@ -605,7 +605,6 @@ set(_ALL_TFLITE_HDRS ${_ALL_TFLITE_SRCS})
+ list(FILTER _ALL_TFLITE_HDRS INCLUDE REGEX ".*\\.h$")
+ target_include_directories(tensorflow-lite
+   PUBLIC $<BUILD_INTERFACE:${TENSORFLOW_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+-  ${CMAKE_BINARY_DIR}/gemmlowp
+ )
+ target_link_libraries(tensorflow-lite
+   PUBLIC
+@@ -619,6 +618,7 @@ target_link_libraries(tensorflow-lite
+     farmhash
+     fft2d_fftsg2d
+     flatbuffers::flatbuffers
++    gemmlowp::gemmlowp
+     ruy::ruy
+     pthreadpool
+     ${CMAKE_DL_LIBS}
+diff --git a/tensorflow/lite/g3doc/guide/build_cmake.md b/tensorflow/lite/g3doc/guide/build_cmake.md
+index 556c763ac0bb5..6c72c37e21441 100644
+--- a/tensorflow/lite/g3doc/guide/build_cmake.md
++++ b/tensorflow/lite/g3doc/guide/build_cmake.md
+@@ -85,6 +85,7 @@ cmake ../tensorflow_src/tensorflow/lite -DTFLITE_ENABLE_INSTALL=ON \
+   -Dabsl_DIR=<install path>/lib/cmake/absl \
+   -DEigen3_DIR=<install path>/share/eigen3/cmake \
+   -DFlatBuffers_DIR=<install path>/lib/cmake/flatbuffers \
++  -Dgemmlowp_DIR=<install path>/lib/cmake/gemmlowp \
+   -DNEON_2_SSE_DIR=<install path>/lib/cmake/NEON_2_SSE \
+   -Dcpuinfo_DIR=<install path>/share/cpuinfo \
+   -Druy_DIR=<install path>/lib/cmake/ruy
+diff --git a/tensorflow/lite/tools/cmake/modules/Findgemmlowp.cmake b/tensorflow/lite/tools/cmake/modules/Findgemmlowp.cmake
+index 70331ad0a69f2..42d269594ce4b 100644
+--- a/tensorflow/lite/tools/cmake/modules/Findgemmlowp.cmake
++++ b/tensorflow/lite/tools/cmake/modules/Findgemmlowp.cmake
+@@ -19,11 +19,7 @@ include(gemmlowp)
+ if(gemmlowp_POPULATED)
+   set(GEMMLOWP_FOUND TRUE)
+   get_target_property(GEMMLOWP_INCLUDE_DIRS gemmlowp INTERFACE_DIRECTORIES)
+-  set(GEMMLOWP_LIBRARIES
+-    gemmlowp
+-    gemmlowp_fixedpoint
+-    gemmlowp_profiler
+-    gemmlowp_eight_bit_int_gemm
+-  )
++  add_library(gemmlowp::gemmlowp ALIAS gemmlowp)
++  set(GEMMLOWP_LIBRARIES gemmlowp)
+ endif()
+ 
+diff --git a/tensorflow/lite/tools/cmake/modules/gemmlowp.cmake b/tensorflow/lite/tools/cmake/modules/gemmlowp.cmake
+index 0aaea326a0a0d..ac296c0307f90 100644
+--- a/tensorflow/lite/tools/cmake/modules/gemmlowp.cmake
++++ b/tensorflow/lite/tools/cmake/modules/gemmlowp.cmake
+@@ -23,7 +23,7 @@ OverridableFetchContent_Declare(
+   gemmlowp
+   GIT_REPOSITORY https://github.com/google/gemmlowp
+   # Sync with tensorflow/third_party/gemmlowp/workspace.bzl
+-  GIT_TAG fda83bdc38b118cc6b56753bd540caa49e570745
++  GIT_TAG e844ffd17118c1e17d94e1ba4354c075a4577b88
+   # It's not currently (cmake 3.17) possible to shallow clone with a GIT TAG
+   # as cmake attempts to git checkout the commit hash after the clone
+   # which doesn't work as it's a shallow clone hence a different commit hash.
+@@ -38,8 +38,16 @@ if(NOT gemmlowp_POPULATED)
+   OverridableFetchContent_Populate(gemmlowp)
+ endif()
+ 
++# gemmlowp creates a benchmark target if BUILD_TESTING is set,
++# which clashes with a target created by google_benchmark.
++# https://github.com/google/gemmlowp/blob/master/contrib/CMakeLists.txt#L85
++set(BUILD_TESTING_TMP ${BUILD_TESTING})
++set(BUILD_TESTING OFF)
++
+ set(GEMMLOWP_SOURCE_DIR "${gemmlowp_SOURCE_DIR}" CACHE PATH "Source directory")
+ add_subdirectory(
+-  "${CMAKE_CURRENT_LIST_DIR}/gemmlowp"
++  "${gemmlowp_SOURCE_DIR}/contrib"
+   "${gemmlowp_BINARY_DIR}"
+ )
++
++set(BUILD_TESTING ${BUILD_TESTING_TMP})
+diff --git a/tensorflow/lite/tools/cmake/modules/gemmlowp/CMakeLists.txt b/tensorflow/lite/tools/cmake/modules/gemmlowp/CMakeLists.txt
+deleted file mode 100644
+index 24ef2ad4ca3e5..0000000000000
+--- a/tensorflow/lite/tools/cmake/modules/gemmlowp/CMakeLists.txt
++++ /dev/null
+@@ -1,119 +0,0 @@
+-#
+-# Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#      https://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-project(gemmlowp CXX)
+-
+-option(GEMMLOWP_ADD_HEADERS_TO_TARGETS OFF
+-  "Whether to add sources to gemmlowp's interface library targets.
+-   This will cause all users of these libraries to also include these headers"
+-)
+-
+-set(GEMMLOWP_SOURCE_DIR "" CACHE PATH
+-  "Directory that contains the gemmlowp project"
+-)
+-if(NOT GEMMLOWP_SOURCE_DIR)
+-  message(FATAL_ERROR "Must specify source directory")
+-endif()
+-
+-# gemmlowp doesn't have a CMake project so this is transcribed from
+-# gemmlowp/BUILD.
+-
+-file(GLOB GEMMLOWP_EIGHTBITINT_HEADERS
+-  "${GEMMLOWP_SOURCE_DIR}/eight_bit_int_gemm/*.h"
+-  )
+-file(GLOB GEMMLOWP_EIGHTBITINT_SOURCES
+-  "${GEMMLOWP_SOURCE_DIR}/eight_bit_int_gemm/*.cc"
+-)
+-file(GLOB GEMMLOWP_FIXEDPOINT_HEADERS "${GEMMLOWP_SOURCE_DIR}/fixedpoint/*.h")
+-file(GLOB GEMMLOWP_INTERNAL_HEADERS "${GEMMLOWP_SOURCE_DIR}/internal/*.h")
+-file(GLOB GEMMLOWP_META_HEADERS "${GEMMLOWP_SOURCE_DIR}/meta/*.h")
+-file(GLOB GEMMLOWP_PROFILING_HEADERS "${GEMMLOWP_SOURCE_DIR}/profiling/*.h")
+-file(GLOB GEMMLOWP_PUBLIC_HEADERS "${GEMMLOWP_SOURCE_DIR}/public/*.h")
+-
+-set(GEMMLOWP_PRIVATE_HEADERS "")
+-list(APPEND GEMMLOWP_PRIVATE_HEADERS ${GEMMLOWP_FIXEDPOINT_HEADERS})
+-list(APPEND GEMMLOWP_PRIVATE_HEADERS ${GEMMLOWP_INTERNAL_HEADERS})
+-
+-add_library(gemmlowp_private INTERFACE)
+-if(GEMMLOWP_ADD_HEADERS_TO_TARGETS)
+-  target_sources(gemmlowp_private INTERFACE ${GEMMLOWP_PRIVATE_HEADERS})
+-endif()
+-target_include_directories(gemmlowp_private INTERFACE $<BUILD_INTERFACE:${GEMMLOWP_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/gemmlowp>)
+-
+-if(TFLITE_ENABLE_INSTALL)
+-  foreach(hdr ${GEMMLOWP_PRIVATE_HEADERS})
+-    get_filename_component(dir ${hdr} DIRECTORY)
+-    file(RELATIVE_PATH dir ${GEMMLOWP_SOURCE_DIR} ${dir})
+-    install(
+-      FILES ${hdr}
+-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gemmlowp/${dir}"
+-    )
+-  endforeach()
+-
+-  install(TARGETS gemmlowp_private
+-    EXPORT tensorflow-liteTargets
+-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-  )
+-endif()
+-
+-add_library(gemmlowp INTERFACE)
+-if(GEMMLOWP_ADD_HEADERS_TO_TARGETS)
+-  target_sources(gemmlowp INTERFACE ${GEMMLOWP_PUBLIC_HEADERS})
+-endif()
+-target_include_directories(gemmlowp INTERFACE $<BUILD_INTERFACE:${GEMMLOWP_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/gemmlowp>)
+-target_link_libraries(gemmlowp INTERFACE gemmlowp_private)
+-
+-add_library(gemmlowp_eight_bit_int_gemm
+-  ${GEMMLOWP_EIGHTBITINT_SOURCES}
+-  ${GEMMLOWP_EIGHTBITINT_HEADERS}
+-)
+-target_include_directories(gemmlowp_eight_bit_int_gemm
+-  PUBLIC "${GEMMLOWP_SOURCE_DIR}/eight_bit_int_gemm"
+-)
+-
+-add_library(gemmlowp_fixedpoint INTERFACE)
+-if(GEMMLOWP_ADD_HEADERS_TO_TARGETS)
+-  target_sources(gemmlowp_fixedpoint INTERFACE ${GEMMLOWP_FIXEDPOINT_HEADERS})
+-endif()
+-target_include_directories(gemmlowp_fixedpoint
+-  INTERFACE "${GEMMLOWP_SOURCE_DIR}/fixedpoint"
+-)
+-target_link_libraries(gemmlowp_fixedpoint INTERFACE gemmlowp_private)
+-
+-add_library(gemmlowp_profiler INTERFACE)
+-if(GEMMLOWP_ADD_HEADERS_TO_TARGETS)
+-  target_sources(gemmlowp_profiler INTERFACE ${GEMMLOWP_PROFILING_HEADERS})
+-endif()
+-target_include_directories(gemmlowp_profiler
+-  INTERFACE "${GEMMLOWP_SOURCE_DIR}/profiling"
+-)
+-
+-if(TFLITE_ENABLE_INSTALL)
+-  foreach(hdr ${GEMMLOWP_PUBLIC_HEADERS})
+-    get_filename_component(dir ${hdr} DIRECTORY)
+-    file(RELATIVE_PATH dir ${GEMMLOWP_SOURCE_DIR} ${dir})
+-    install(
+-      FILES ${hdr}
+-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/gemmlowp/${dir}"
+-    )
+-  endforeach()
+-
+-  install(TARGETS gemmlowp
+-    EXPORT tensorflow-liteTargets
+-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+-  )
+-endif()
