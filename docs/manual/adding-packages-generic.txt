@@ -529,6 +529,10 @@ LIBFOO_IGNORE_CVES += CVE-2020-54321
 
 ** +LIBFOO_CPE_ID_UPDATE+ specifies the _update_ part of the CPE
    identifier. When not defined the default value is +*+.
+
+** +LIBFOO_CPE_ID_SW_EDITION+ specifies the _software edition_
+  part of the CPE identifier. When not defined the default value
+  is +*+.
 --
 +
 If any of those variables is defined, then the generic package
