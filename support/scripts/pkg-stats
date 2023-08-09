@@ -32,6 +32,7 @@ import time
 import gzip
 import xml.etree.ElementTree
 import requests
+from cve import CVE_API, cpe_product
 
 brpath = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -607,15 +608,17 @@ async def check_package_latest_version(packages):
 
 
 def check_package_cve_affects(cve, cpe_product_pkgs):
-    for product in cve.affected_products:
-        if product not in cpe_product_pkgs:
+    product = cve.affected_product
+    if product not in cpe_product_pkgs:
+        return
+    for pkg in cpe_product_pkgs[product]:
+        if cve.identifier in pkg.cves or cve.identifier in pkg.unsure_cves:
             continue
-        for pkg in cpe_product_pkgs[product]:
-            cve_status = cve.affects(pkg.name, pkg.current_version, pkg.ignored_cves, pkg.cpeid)
-            if cve_status == cve.CVE_AFFECTS:
-                pkg.cves.append(cve.identifier)
-            elif cve_status == cve.CVE_UNKNOWN:
-                pkg.unsure_cves.append(cve.identifier)
+        cve_status = cve.affects(pkg.name, pkg.current_version, pkg.ignored_cves, pkg.cpeid)
+        if cve_status == cve.CVE_AFFECTS:
+            pkg.cves.append(cve.identifier)
+        elif cve_status == cve.CVE_UNKNOWN:
+            pkg.unsure_cves.append(cve.identifier)
 
 
 def check_package_cves(nvd_path, packages):
@@ -631,12 +634,13 @@ def check_package_cves(nvd_path, packages):
             pkg.status['cve'] = ("na", "no version information available")
             continue
         if pkg.cpeid:
-            cpe_product = cvecheck.cpe_product(pkg.cpeid)
-            cpe_product_pkgs[cpe_product].append(pkg)
+            product = cpe_product(pkg.cpeid)
+            cpe_product_pkgs[product].append(pkg)
         else:
             cpe_product_pkgs[pkg.name].append(pkg)
 
-    for cve in cvecheck.CVE.read_nvd_dir(nvd_path):
+    cve_api = CVE_API(nvd_path)
+    for cve in cve_api.load_all():
         check_package_cve_affects(cve, cpe_product_pkgs)
 
     for pkg in packages:
@@ -1285,12 +1289,7 @@ def parse_args():
 
 
 def __main__():
-    global cvecheck
-
     args = parse_args()
-
-    if args.nvd_path:
-        import cve as cvecheck
 
     show_info_js = None
     if args.packages:
