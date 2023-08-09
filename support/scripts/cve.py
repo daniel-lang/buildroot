@@ -20,24 +20,7 @@
 import distutils.version
 import operator
 from nvd_api_v2 import NVD_API
-
-
-# Check if two CPE IDs match each other
-def cpe_matches(cpe1, cpe2):
-    cpe1_elems = cpe1.split(":")
-    cpe2_elems = cpe2.split(":")
-
-    remains = filter(lambda x: x[0] not in ["*", "-"] and x[1] not in ["*", "-"] and x[0] != x[1],
-                     zip(cpe1_elems, cpe2_elems))
-    return len(list(remains)) == 0
-
-
-def cpe_product(cpe):
-    return cpe.split(':')[4]
-
-
-def cpe_version(cpe):
-    return cpe.split(':')[5]
+from cpe import CPE_ID
 
 
 class CVE:
@@ -71,7 +54,7 @@ class CVE:
     @property
     def affected_product(self):
         """Name of the affected product"""
-        return cpe_product(self.match_criteria)
+        return CPE_ID.product(self.match_criteria)
 
     def affects(self, name, version, cve_ignore_list, cpeid=None):
         """
@@ -93,9 +76,9 @@ class CVE:
         # version, as they might be different due to
         # <pkg>_CPE_ID_VERSION
         else:
-            pkg_version = distutils.version.LooseVersion(cpe_version(cpeid))
+            pkg_version = distutils.version.LooseVersion(CPE_ID.version(cpeid))
 
-        if not cpe_matches(self.match_criteria, cpeid):
+        if not CPE_ID.matches(self.match_criteria, cpeid):
             return self.CVE_DOESNT_AFFECT
         if not self.v_start and not self.v_end:
             return self.CVE_AFFECTS
@@ -189,8 +172,8 @@ class CVE_API(NVD_API):
 
     def extract_cpe_match_data(self, cpe_match):
         """Map CPE match information to database fields."""
-        product = cpe_product(cpe_match['criteria'])
-        version = cpe_version(cpe_match['criteria'])
+        product = CPE_ID.product(cpe_match['criteria'])
+        version = CPE_ID.version(cpe_match['criteria'])
         # ignore when product is '-', which means N/A
         if product == '-':
             return
